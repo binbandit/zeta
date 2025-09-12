@@ -1,17 +1,54 @@
-# we use tokio_unstable to enable runtime::Handle::id so we can separate
-# globals from multiple parallel tests. If that function ever does get removed
-# its possible to replace (with some additional overhead and effort)
-# Annoyingly build.rustflags doesn't work here because it gets overwritten
-# if people have their own global target.<..> config (for example to enable mold)
-# specifying flags this way is more robust as they get merged
-# This still gets overwritten by RUST_FLAGS though, luckily it shouldn't be necessary
-# to set those most of the time. If downstream does overwrite this its not a huge
-# deal since it will only break tests anyway
-[target."cfg(all())"]
-rustflags = ["--cfg", "tokio_unstable", "-C", "target-feature=-crt-static"]
+# Cargo configuration for fast development builds
 
+[net]
+git-fetch-with-cli = true
 
-[alias]
-xtask = "run --package xtask --"
-integration-test = "test --features integration --profile integration --workspace --test integration"
+# Platform-specific linker configuration for faster builds
+[target.x86_64-apple-darwin]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 
+[target.aarch64-apple-darwin]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold", "-C", "split-debuginfo=unpacked"]
+
+[target.x86_64-pc-windows-msvc]
+linker = "lld-link.exe"
+
+[target.x86_64-pc-windows-gnu]
+linker = "rust-lld.exe"
+
+# Use multiple codegen units for faster compilation (trades compile time for runtime performance)
+[profile.dev]
+# Cranelift backend for faster debug builds (requires nightly)
+# Uncomment if using nightly:
+# codegen-backend = "cranelift"
+
+# Faster compilation settings
+codegen-units = 256
+debug = 1  # Minimal debug info
+
+[profile.dev.package."*"]
+# Optimize dependencies even in debug mode
+opt-level = 2
+
+# Release build optimizations
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+panic = "abort"
+
+# Special profile for CI/testing - fast to compile but with some optimizations
+[profile.ci]
+inherits = "dev"
+opt-level = 1
+
+# Profile for profiling/benchmarking
+[profile.bench]
+inherits = "release"
+debug = true
