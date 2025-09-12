@@ -410,6 +410,8 @@ pub struct Config {
     pub editor_config: bool,
     /// Whether to render rainbow colors for matching brackets. Defaults to `false`.
     pub rainbow_brackets: bool,
+    /// Whether to enable vim-style keybindings. Defaults to `false`.
+    pub vim_mode: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, Eq, PartialOrd, Ord)]
@@ -1094,6 +1096,7 @@ impl Default for Config {
             clipboard_provider: ClipboardProvider::default(),
             editor_config: true,
             rainbow_brackets: false,
+            vim_mode: false,
         }
     }
 }

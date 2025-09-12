@@ -66,7 +66,12 @@ impl Config {
             local.and_then(|file| toml::from_str(&file).map_err(ConfigLoadError::BadConfig));
         let res = match (global_config, local_config) {
             (Ok(global), Ok(local)) => {
-                let mut keys = keymap::default();
+                let mut keys = if local.editor.as_ref().and_then(|e| e.get("vim_mode")).and_then(|v| v.as_bool()).unwrap_or(false)
+                    || global.editor.as_ref().and_then(|e| e.get("vim_mode")).and_then(|v| v.as_bool()).unwrap_or(false) {
+                    keymap::vim::vim_default()
+                } else {
+                    keymap::default()
+                };
                 if let Some(global_keys) = global.keys {
                     merge_keys(&mut keys, global_keys)
                 }
@@ -96,7 +101,11 @@ impl Config {
                 return Err(ConfigLoadError::BadConfig(err))
             }
             (Ok(config), Err(_)) | (Err(_), Ok(config)) => {
-                let mut keys = keymap::default();
+                let mut keys = if config.editor.as_ref().and_then(|e| e.get("vim_mode")).and_then(|v| v.as_bool()).unwrap_or(false) {
+                    keymap::vim::vim_default()
+                } else {
+                    keymap::default()
+                };
                 if let Some(keymap) = config.keys {
                     merge_keys(&mut keys, keymap);
                 }

@@ -1,5 +1,6 @@
 pub mod default;
 pub mod macros;
+pub mod vim;
 
 pub use crate::commands::MappableCommand;
 use arc_swap::{
