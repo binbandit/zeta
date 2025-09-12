@@ -17,6 +17,7 @@ members = [
   "xtask",
 ]
 
+
 default-members = [
   "helix-term"
 ]
@@ -63,3 +64,5 @@ repository = "https://github.com/helix-editor/helix"
 homepage = "https://helix-editor.com"
 license = "MPL-2.0"
 rust-version = "1.82"
+
+[profile.dev]
