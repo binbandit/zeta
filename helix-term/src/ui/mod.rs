@@ -1,6 +1,7 @@
 mod completion;
 mod document;
 pub(crate) mod editor;
+mod file_explorer;
 mod info;
 pub mod lsp;
 mod markdown;
@@ -397,6 +398,7 @@ fn directory_content(path: &Path, editor: &Editor) -> Result<Vec<(PathBuf, bool)
 
     Ok(content)
 }
+
 
 pub mod completers {
     use super::Utf8PathBuf;

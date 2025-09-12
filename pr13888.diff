@@ -1,0 +1,249 @@
+diff --git a/book/src/editor.md b/book/src/editor.md
+index 7f1de68bb056..0d145eac43ec 100644
+--- a/book/src/editor.md
++++ b/book/src/editor.md
+@@ -221,6 +221,24 @@ Example:
+ !.gitattributes
+ ```
+ 
++### `[editor.file-explorer]` Section
++
++In addition to the options for the file picker and global search, a similar set of options is presented to configure the file explorer separately. However, unlike the file picker, the defaults are set to avoid ignoring most files.
++
++Note that the ignore files consulted by the file explorer when `ignore` is set to true are the same ones used by the file picker, including the aforementioned Helix-specific ignore files.
++
++
++| Key | Description | Default |
++|--|--|---------|
++|`hidden` | Enables ignoring hidden files | `false`
++|`follow-symlinks` | Follow symlinks instead of ignoring them | `false`
++|`parents` | Enables reading ignore files from parent directories | `false`
++|`ignore` | Enables reading `.ignore` files | `false`
++|`git-ignore` | Enables reading `.gitignore` files | `false`
++|`git-global` | Enables reading global `.gitignore`, whose path is specified in git's config: `core.excludesfile` option | `false`
++|`git-exclude` | Enables reading `.git/info/exclude` files | `false`
++
++
+ ### `[editor.auto-pairs]` Section
+ 
+ Enables automatic insertion of pairs to parentheses, brackets, etc. Can be a
+diff --git a/helix-term/src/ui/mod.rs b/helix-term/src/ui/mod.rs
+index 089f8e971e92..5a4db0464911 100644
+--- a/helix-term/src/ui/mod.rs
++++ b/helix-term/src/ui/mod.rs
+@@ -185,6 +185,22 @@ pub fn raw_regex_prompt(
+     cx.push_layer(Box::new(prompt));
+ }
+ 
++/// We want to exclude files that the editor can't handle yet
++fn get_excluded_types() -> ignore::types::Types {
++    use ignore::types::TypesBuilder;
++    let mut type_builder = TypesBuilder::new();
++    type_builder
++        .add(
++            "compressed",
++            "*.{zip,gz,bz2,zst,lzo,sz,tgz,tbz2,lz,lz4,lzma,lzo,z,Z,xz,7z,rar,cab}",
++        )
++        .expect("Invalid type definition");
++    type_builder.negate("all");
++    type_builder
++        .build()
++        .expect("failed to build excluded_types")
++}
++
+ #[derive(Debug)]
+ pub struct FilePickerData {
+     root: PathBuf,
+@@ -193,7 +209,7 @@ pub struct FilePickerData {
+ type FilePicker = Picker<PathBuf, FilePickerData>;
+ 
+ pub fn file_picker(editor: &Editor, root: PathBuf) -> FilePicker {
+-    use ignore::{types::TypesBuilder, WalkBuilder};
++    use ignore::WalkBuilder;
+     use std::time::Instant;
+ 
+     let config = editor.config();
+@@ -208,7 +224,8 @@ pub fn file_picker(editor: &Editor, root: PathBuf) -> FilePicker {
+     let absolute_root = root.canonicalize().unwrap_or_else(|_| root.clone());
+ 
+     let mut walk_builder = WalkBuilder::new(&root);
+-    walk_builder
++
++    let mut files = walk_builder
+         .hidden(config.file_picker.hidden)
+         .parents(config.file_picker.parents)
+         .ignore(config.file_picker.ignore)
+@@ -218,31 +235,18 @@ pub fn file_picker(editor: &Editor, root: PathBuf) -> FilePicker {
+         .git_exclude(config.file_picker.git_exclude)
+         .sort_by_file_name(|name1, name2| name1.cmp(name2))
+         .max_depth(config.file_picker.max_depth)
+-        .filter_entry(move |entry| filter_picker_entry(entry, &absolute_root, dedup_symlinks));
+-
+-    walk_builder.add_custom_ignore_filename(helix_loader::config_dir().join("ignore"));
+-    walk_builder.add_custom_ignore_filename(".helix/ignore");
+-
+-    // We want to exclude files that the editor can't handle yet
+-    let mut type_builder = TypesBuilder::new();
+-    type_builder
+-        .add(
+-            "compressed",
+-            "*.{zip,gz,bz2,zst,lzo,sz,tgz,tbz2,lz,lz4,lzma,lzo,z,Z,xz,7z,rar,cab}",
+-        )
+-        .expect("Invalid type definition");
+-    type_builder.negate("all");
+-    let excluded_types = type_builder
++        .filter_entry(move |entry| filter_picker_entry(entry, &absolute_root, dedup_symlinks))
++        .add_custom_ignore_filename(helix_loader::config_dir().join("ignore"))
++        .add_custom_ignore_filename(".helix/ignore")
++        .types(get_excluded_types())
+         .build()
+-        .expect("failed to build excluded_types");
+-    walk_builder.types(excluded_types);
+-    let mut files = walk_builder.build().filter_map(|entry| {
+-        let entry = entry.ok()?;
+-        if !entry.file_type()?.is_file() {
+-            return None;
+-        }
+-        Some(entry.into_path())
+-    });
++        .filter_map(|entry| {
++            let entry = entry.ok()?;
++            if !entry.file_type()?.is_file() {
++                return None;
++            }
++            Some(entry.into_path())
++        });
+     log::debug!("file_picker init {:?}", Instant::now().duration_since(now));
+ 
+     let columns = [PickerColumn::new(
+@@ -304,7 +308,7 @@ type FileExplorer = Picker<(PathBuf, bool), (PathBuf, Style)>;
+ 
+ pub fn file_explorer(root: PathBuf, editor: &Editor) -> Result<FileExplorer, std::io::Error> {
+     let directory_style = editor.theme.get("ui.text.directory");
+-    let directory_content = directory_content(&root)?;
++    let directory_content = directory_content(&root, editor)?;
+ 
+     let columns = [PickerColumn::new(
+         "path",
+@@ -350,21 +354,47 @@ pub fn file_explorer(root: PathBuf, editor: &Editor) -> Result<FileExplorer, std
+     Ok(picker)
+ }
+ 
+-fn directory_content(path: &Path) -> Result<Vec<(PathBuf, bool)>, std::io::Error> {
+-    let mut content: Vec<_> = std::fs::read_dir(path)?
+-        .flatten()
+-        .map(|entry| {
+-            (
+-                entry.path(),
+-                std::fs::metadata(entry.path()).is_ok_and(|metadata| metadata.is_dir()),
+-            )
++fn directory_content(path: &Path, editor: &Editor) -> Result<Vec<(PathBuf, bool)>, std::io::Error> {
++    use ignore::WalkBuilder;
++
++    let config = editor.config();
++
++    let mut walk_builder = WalkBuilder::new(path);
++
++    let mut content: Vec<(PathBuf, bool)> = walk_builder
++        .hidden(config.file_explorer.hidden)
++        .parents(config.file_explorer.parents)
++        .ignore(config.file_explorer.ignore)
++        .follow_links(config.file_explorer.follow_symlinks)
++        .git_ignore(config.file_explorer.git_ignore)
++        .git_global(config.file_explorer.git_global)
++        .git_exclude(config.file_explorer.git_exclude)
++        .max_depth(Some(1))
++        .add_custom_ignore_filename(helix_loader::config_dir().join("ignore"))
++        .add_custom_ignore_filename(".helix/ignore")
++        .types(get_excluded_types())
++        .build()
++        .filter_map(|entry| {
++            entry
++                .map(|entry| {
++                    (
++                        entry.path().to_path_buf(),
++                        entry
++                            .file_type()
++                            .is_some_and(|file_type| file_type.is_dir()),
++                    )
++                })
++                .ok()
++                .filter(|entry| entry.0 != path)
+         })
+         .collect();
+ 
+     content.sort_by(|(path1, is_dir1), (path2, is_dir2)| (!is_dir1, path1).cmp(&(!is_dir2, path2)));
++
+     if path.parent().is_some() {
+         content.insert(0, (path.join(".."), true));
+     }
++
+     Ok(content)
+ }
+ 
+diff --git a/helix-term/src/ui/picker.rs b/helix-term/src/ui/picker.rs
+index 3f3aaba2b3ce..4f21b2c3b7b9 100644
+--- a/helix-term/src/ui/picker.rs
++++ b/helix-term/src/ui/picker.rs
+@@ -595,7 +595,7 @@ impl<T: 'static + Send + Sync, D: 'static + Send + Sync> Picker<T, D> {
+                 let preview = std::fs::metadata(&path)
+                     .and_then(|metadata| {
+                         if metadata.is_dir() {
+-                            let files = super::directory_content(&path)?;
++                            let files = super::directory_content(&path, editor)?;
+                             let file_names: Vec<_> = files
+                                 .iter()
+                                 .filter_map(|(path, is_dir)| {
+diff --git a/helix-view/src/editor.rs b/helix-view/src/editor.rs
+index 57e130881294..cb88e49aea60 100644
+--- a/helix-view/src/editor.rs
++++ b/helix-view/src/editor.rs
+@@ -221,6 +221,32 @@ impl Default for FilePickerConfig {
+     }
+ }
+ 
++#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
++#[serde(rename_all = "kebab-case", default, deny_unknown_fields)]
++pub struct FileExplorerConfig {
++    /// IgnoreOptions
++    /// Enables ignoring hidden files.
++    /// Whether to hide hidden files in file explorer and global search results. Defaults to false.
++    pub hidden: bool,
++    /// Enables following symlinks.
++    /// Whether to follow symbolic links in file picker and file or directory completions. Defaults to true.
++    pub follow_symlinks: bool,
++    /// Enables reading ignore files from parent directories. Defaults to true.
++    pub parents: bool,
++    /// Enables reading `.ignore` files.
++    /// Whether to hide files listed in .ignore in file picker and global search results. Defaults to true.
++    pub ignore: bool,
++    /// Enables reading `.gitignore` files.
++    /// Whether to hide files listed in .gitignore in file picker and global search results. Defaults to true.
++    pub git_ignore: bool,
++    /// Enables reading global .gitignore, whose path is specified in git's config: `core.excludefile` option.
++    /// Whether to hide files listed in global .gitignore in file picker and global search results. Defaults to true.
++    pub git_global: bool,
++    /// Enables reading `.git/info/exclude` files.
++    /// Whether to hide files listed in .git/info/exclude in file picker and global search results. Defaults to true.
++    pub git_exclude: bool,
++}
++
+ fn serialize_alphabet<S>(alphabet: &[char], serializer: S) -> Result<S::Ok, S::Error>
+ where
+     S: Serializer,
+@@ -318,6 +344,7 @@ pub struct Config {
+     /// Whether to display infoboxes. Defaults to true.
+     pub auto_info: bool,
+     pub file_picker: FilePickerConfig,
++    pub file_explorer: FileExplorerConfig,
+     /// Configuration of the statusline elements
+     pub statusline: StatusLineConfig,
+     /// Shape for cursor in each mode
+@@ -1022,6 +1049,7 @@ impl Default for Config {
+             completion_trigger_len: 2,
+             auto_info: true,
+             file_picker: FilePickerConfig::default(),
++            file_explorer: FileExplorerConfig::default(),
+             statusline: StatusLineConfig::default(),
+             cursor_shape: CursorShapeConfig::default(),
+             true_color: false,
