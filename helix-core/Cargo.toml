@@ -57,6 +57,7 @@ nucleo.workspace = true
 parking_lot.workspace = true
 globset = "0.4.16"
 regex-cursor = "0.1.5"
+hack-workspace = { version = "0.1", path = "../hack-workspace" }
 
 [dev-dependencies]
 quickcheck = { version = "1", default-features = false }

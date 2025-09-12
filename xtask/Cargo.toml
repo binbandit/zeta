@@ -17,3 +17,4 @@ helix-core = { path = "../helix-core" }
 helix-view = { path = "../helix-view" }
 helix-loader = { path = "../helix-loader" }
 toml.workspace = true
+hack-workspace = { version = "0.1", path = "../hack-workspace" }

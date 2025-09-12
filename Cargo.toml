@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+  "hack-workspace",
   "helix-core",
   "helix-view",
   "helix-term",
