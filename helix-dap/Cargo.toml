@@ -27,7 +27,7 @@ futures-executor.workspace = true
 futures-util.workspace = true
 tokio-stream.workspace = true
 hack-workspace = { version = "0.1", path = "../hack-workspace" }
-
+sonic-rs.workspace = true
 
 [dev-dependencies]
 fern = "0.7"
