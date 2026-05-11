@@ -78,7 +78,6 @@ install:
             make \
             markdown \
             python \
-            ruby \
             rust \
             scss \
             swift \
@@ -109,12 +108,6 @@ install:
         go install golang.org/x/tools/gopls@latest
     else
         printf 'Skipping gopls: go is not installed\n' >&2
-    fi
-
-    if command -v gem >/dev/null 2>&1; then
-        gem install ruby-lsp
-    else
-        printf 'Skipping ruby-lsp: gem is not installed\n' >&2
     fi
 
     if command -v npm >/dev/null 2>&1; then
