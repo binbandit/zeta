@@ -1,114 +1,138 @@
-attribute = "lilac"
-keyword = "almond"
-"keyword.directive" = "lilac" # -- preprocessor comments (#if in C)
-namespace = "lilac"
-punctuation = "lavender"
-"punctuation.delimiter" = "lavender"
-operator = "lilac"
-special = "honey"
-"variable.other.member" = "white"
-variable = "lavender"
-# variable = "almond" # TODO: metavariables only
-# "variable.parameter" = { fg = "lavender", modifiers = ["underlined"] }
-"variable.parameter" = { fg = "lavender" }
-"variable.builtin" = "mint"
-type = "white"
-"type.builtin" = "white" # TODO: distinguish?
-constructor = "lilac"
-function = "white"
-"function.macro" = "lilac"
-"function.builtin" = "white"
-tag = "almond"
-comment = "sirocco"
-constant = "white"
-"constant.builtin" = "white"
-string = "silver"
-"constant.numeric" = "chamois"
-"constant.character.escape" = "honey"
-# used for lifetimes
-label = "honey"
-tabstop = { modifiers = ["italic"], bg = "bossanova" }
+"attribute" = { fg = "blue", modifiers = ["italic"] }
+"ui.virtual.wrap" = "softwrap"
+"keyword" = "keyword"
+"keyword.control.conditional" = { fg = "conditional", modifiers = ["italic"] }
+"keyword.directive" = "magenta" # -- preprocessor comments (#if in C)
 
-"markup.heading" = "lilac"
+"namespace" = { fg = "namespace", modifiers = ["italic"] }
+
+"punctuation" = "gray06"
+"punctuation.delimiter" = "gray06"
+
+"operator" = "operator"
+"special" = "yellow"
+
+"variable" = { fg = "fg" }
+"variable.builtin" = "bright_blue"
+"variable.parameter" = { fg = "white", modifiers = ["italic"] }
+"variable.other.member" = "white"
+
+"type" = "bright_blue"
+"type.builtin" = "magenta"
+"type.enum.variant" = "magenta"
+
+"constructor" = "yellow"
+
+"function" = { fg = "function", modifiers = ["italic"] }
+"function.macro" = "bright_cyan"
+"function.builtin" = "support_function"
+
+"tag" = "tag"
+"comment" = { fg = "comment", modifiers = ["italic"] }
+
+"string" = "string"
+"string.regexp" = "green"
+"string.special" = "yellow"
+
+"constant" = "constant"
+"constant.builtin" = "yellow"
+"constant.numeric" = "numeric"
+"constant.character.escape" = "cyan"
+
+# used for lifetimes
+"label" = "yellow"
+
+"markup.heading.marker" = { fg = "gray06" }
+"markup.heading" = { fg = "bright_blue", modifiers = ["bold"] }
+"markup.list" = "gray06"
 "markup.bold" = { modifiers = ["bold"] }
 "markup.italic" = { modifiers = ["italic"] }
-"markup.strikethrough" = { modifiers = ["crossed_out"] }
-"markup.link.url" = { fg = "silver", modifiers = ["underlined"] }
-"markup.link.text" = "almond"
-"markup.raw" = "almond"
+"markup.link.url" = { fg = "green", modifiers = ["underlined"] }
+"markup.link.text" = { fg = "blue", modifiers = ["italic"] }
+"markup.raw" = "yellow"
 
-"diff.plus" = "#35bf86"
-"diff.minus" = "#f22c86"
-"diff.delta" = "#6f44f0"
+"diff.plus" = "bright_green"
+"diff.minus" = "red"
+"diff.delta" = "bright_blue"
 
-# TODO: differentiate doc comment
-# concat (ERROR) @error.syntax and "MISSING ;" selectors for errors
+"ui.background" = { bg = "bg" }
+"ui.background.separator" = { fg = "fg" }
 
-"ui.background" = { bg = "midnight" }
-"ui.background.separator" = { fg = "comet" }
-"ui.linenr" = { fg = "comet" }
-"ui.linenr.selected" = { fg = "lilac" }
-"ui.statusline" = { fg = "lilac", bg = "revolver" }
-"ui.statusline.inactive" = { fg = "lavender", bg = "revolver" }
-"ui.popup" = { bg = "revolver" }
-"ui.window" = { fg = "bossanova" }
-"ui.help" = { bg = "#7958DC", fg = "#171452" }
-"ui.text" = { fg = "lavender" }
-"ui.text.focus" = { fg = "white" }
-"ui.text.inactive" = "sirocco"
-"ui.text.directory" = { fg = "lilac" }
-"ui.virtual" = { fg = "comet" }
-"ui.virtual.ruler" = { bg = "bossanova" }
-"ui.virtual.jump-label" = { fg = "apricot", modifiers = ["bold"] }
+"ui.linenr" = { fg = "gray04" }
+"ui.linenr.selected" = { fg = "fg" }
 
-"ui.virtual.indent-guide" = { fg = "comet" }
+"ui.statusline" = { fg = "status_line_fg", bg = "gray01" }
+"ui.statusline.inactive" = { fg = "fg", bg = "gray01", modifiers = ["dim"] }
+"ui.statusline.normal" = { fg = "bg", bg = "cyan", modifiers = ["bold"] }
+"ui.statusline.insert" = { fg = "bg", bg = "blue", modifiers = ["bold"] }
+"ui.statusline.select" = { fg = "bg", bg = "magenta", modifiers = ["bold"] }
 
-"ui.selection" = { bg = "#540099" }
-"ui.selection.primary" = { bg = "#540099" }
-# TODO: namespace ui.cursor as ui.selection.cursor?
-"ui.cursor.select" = { bg = "delta" }
-"ui.cursor.insert" = { bg = "white" }
-"ui.cursor.primary.select" = { bg = "delta" }
-"ui.cursor.primary.insert" = { bg = "white" }
-"ui.cursor.match" = { fg = "#212121", bg = "#6C6999" }
-"ui.cursor" = { modifiers = ["reversed"] }
-"ui.cursorline.primary" = { bg = "bossanova" }
-"ui.highlight" = { bg = "bossanova" }
-"ui.highlight.frameline" = { bg = "#634450" }
-"ui.debug" = { fg = "#634450" }
-"ui.debug.breakpoint" = { fg = "apricot" }
-"ui.menu" = { fg = "lavender", bg = "revolver" }
-"ui.menu.selected" = { fg = "revolver", bg = "white" }
-"ui.menu.scroll" = { fg = "lavender", bg = "comet" }
+"ui.popup" = { bg = "gray01" }
+"ui.window" = { fg = "gray02" }
+"ui.help" = { bg = "gray01", fg = "white" }
 
-"diagnostic.hint" = { underline = { color = "silver", style = "curl" } }
-"diagnostic.info" = { underline = { color = "delta", style = "curl" } }
-"diagnostic.warning" = { underline = { color = "lightning", style = "curl" } }
-"diagnostic.error" = { underline = { color = "apricot", style = "curl" } }
+"ui.text" = { fg = "fg" }
+"ui.text.focus" = { fg = "fg" }
+
+"ui.virtual" = { fg = "gray02" }
+"ui.virtual.ruler" = { bg = "gray02" }
+"ui.virtual.indent-guide" = { fg = "gray02" }
+"ui.virtual.inlay-hint" = { fg = "gray03" }
+
+"ui.selection" = { bg = "gray03" }
+"ui.selection.primary" = { bg = "gray03" }
+
+"ui.cursor" = { fg = "bg", bg = "cursor" }
+"ui.cursor.match" = { fg = "yellow", modifiers = ["bold", "underlined"] }
+"ui.cursorline.primary" = { bg = "gray01" }
+
+"ui.highlight" = { bg = "gray02" }
+
+"ui.menu" = { fg = "white", bg = "gray01" }
+"ui.menu.selected" = { fg = "bright_white", bg = "gray03" }
+"ui.menu.scroll" = { fg = "gray04", bg = "gray01" }
+
+diagnostic = { modifiers = ["underlined"] }
 "diagnostic.unnecessary" = { modifiers = ["dim"] }
 "diagnostic.deprecated" = { modifiers = ["crossed_out"] }
 
-warning = "lightning"
-error = "apricot"
-info = "delta"
-hint = "silver"
+warning = "yellow"
+error = "error"
+info = "bright_blue"
+hint = "bright_cyan"
 
 [palette]
-white = "#ffffff"
-lilac = "#dbbfef"
-lavender = "#a4a0e8"
-comet = "#5a5977"
-bossanova = "#452859"
-midnight = "#3b224c"
-revolver = "#281733"
-
-silver = "#cccccc"
-sirocco = "#697C81"
-mint = "#9ff28f"
-almond = "#eccdba"
-chamois = "#E8DCA0"
-honey = "#efba5d"
-
-apricot = "#f47868"
-lightning = "#ffcd1c"
-delta = "#6F44F0"
+error = "#fca5a5"
+bg = "#0F1014"
+fg = "#c9c7cd"
+green = "#90b99f"
+bright_green = "#9dc6ac"
+yellow = "#e5c890"
+blue = "#aca1cf"
+bright_blue = "#b9aeda"
+magenta = "#e29eca"
+cyan = "#ea83a5"
+bright_cyan = "#f591b2"
+white = "#c1c0d4"
+bright_white = "#cac9dd"
+gray01 = "#1b1b1d"
+gray02 = "#2a2a2d"
+gray03 = "#3e3e43"
+gray04 = "#57575f"
+gray06 = "#9998a8"
+gray07 = "#c1c0d4"
+comment = "#808080"
+red = "#e78284"
+function = "#e5c890"
+support_function = "#9898a6"
+constant = "#8eb6f5"
+string = "#9898a6"
+tag = "#9898a6"
+keyword = "#8eb6f5"
+namespace = "#c58fff"
+numeric = "#e9c46a"
+status_line_fg = "#e5c890"
+operator = "#8eb6f5"
+softwrap = "#808080"
+conditional = "#a8a29e"
+cursor = "#e5c890"

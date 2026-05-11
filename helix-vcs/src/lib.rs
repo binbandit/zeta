@@ -11,7 +11,43 @@ use std::{
 
 #[cfg(feature = "git")]
 mod git;
+#[cfg(feature = "git")]
 pub use git::blame::FileBlame;
+
+#[cfg(not(feature = "git"))]
+mod blame_stub {
+    use anyhow::{bail, Result};
+    use std::path::PathBuf;
+
+    #[derive(Debug)]
+    pub struct FileBlame;
+
+    impl FileBlame {
+        pub fn try_new(_file: PathBuf) -> Result<Self> {
+            bail!("git support not compiled in")
+        }
+
+        pub fn blame_for_line(
+            &self,
+            _line: u32,
+            _inserted_lines: u32,
+            _removed_lines: u32,
+        ) -> LineBlame {
+            LineBlame
+        }
+    }
+
+    pub struct LineBlame;
+
+    impl LineBlame {
+        pub fn parse_format(&mut self, _format: &str) -> String {
+            String::new()
+        }
+    }
+}
+
+#[cfg(not(feature = "git"))]
+pub use blame_stub::FileBlame;
 
 mod diff;
 
@@ -104,6 +140,7 @@ enum DiffProvider {
 
 impl DiffProvider {
     fn get_diff_base(&self, file: &Path) -> Result<Vec<u8>> {
+        let _ = file;
         match self {
             #[cfg(feature = "git")]
             Self::Git => git::get_diff_base(file),
@@ -112,6 +149,7 @@ impl DiffProvider {
     }
 
     fn get_current_head_name(&self, file: &Path) -> Result<Arc<ArcSwap<Box<str>>>> {
+        let _ = file;
         match self {
             #[cfg(feature = "git")]
             Self::Git => git::get_current_head_name(file),
@@ -124,6 +162,7 @@ impl DiffProvider {
         cwd: &Path,
         f: impl Fn(Result<FileChange>) -> bool,
     ) -> Result<()> {
+        let _ = (cwd, &f);
         match self {
             #[cfg(feature = "git")]
             Self::Git => git::for_each_changed_file(cwd, f),
