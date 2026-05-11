@@ -258,6 +258,7 @@ pub struct Picker<T: 'static + Send + Sync, D: 'static> {
     widths: Vec<Constraint>,
 
     callback_fn: PickerCallback<T>,
+    option_from_prompt_fn: Option<PickerOptionFromPrompt<T>>,
     default_action: Action,
 
     pub truncate_start: bool,
@@ -386,6 +387,7 @@ impl<T: 'static + Send + Sync, D: 'static + Send + Sync> Picker<T, D> {
             truncate_start: true,
             show_preview: true,
             callback_fn: Box::new(callback_fn),
+            option_from_prompt_fn: None,
             default_action: Action::Replace,
             completion_height: 0,
             widths,
@@ -426,6 +428,14 @@ impl<T: 'static + Send + Sync, D: 'static + Send + Sync> Picker<T, D> {
 
     pub fn with_history_register(mut self, history_register: Option<char>) -> Self {
         self.prompt.with_history_register(history_register);
+        self
+    }
+
+    pub fn with_option_from_prompt_fn(
+        mut self,
+        option_from_prompt_fn: PickerOptionFromPrompt<T>,
+    ) -> Self {
+        self.option_from_prompt_fn = Some(option_from_prompt_fn);
         self
     }
 
@@ -1109,6 +1119,13 @@ impl<I: 'static + Send + Sync, D: 'static + Send + Sync> Component for Picker<I,
                     (self.callback_fn)(ctx, option, self.default_action);
                 }
             }
+            alt!('o') => {
+                if let Some(option_from_prompt) = &self.option_from_prompt_fn {
+                    let option = option_from_prompt(&self.prompt);
+                    (self.callback_fn)(ctx, &option, self.default_action);
+                    return close_fn(self);
+                }
+            }
             key!(Enter) => {
                 // If the prompt has a history completion and is empty, use enter to accept
                 // that completion
@@ -1203,3 +1220,4 @@ impl<T: 'static + Send + Sync, D> Drop for Picker<T, D> {
 }
 
 type PickerCallback<T> = Box<dyn Fn(&mut Context, &T, Action)>;
+type PickerOptionFromPrompt<T> = Box<dyn Fn(&Prompt) -> T>;

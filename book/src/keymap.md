@@ -465,6 +465,7 @@ See the documentation page on [pickers](./pickers.md) for more info.
 | `Home`                       | Go to first entry                                          |
 | `End`                        | Go to last entry                                           |
 | `Enter`                      | Open selected                                              |
+| `Alt-o`                      | Open prompt input instead of selected entry                |
 | `Alt-Enter`                  | Open selected in the background without closing the picker |
 | `Ctrl-s`                     | Open horizontally                                          |
 | `Ctrl-v`                     | Open vertically                                            |
