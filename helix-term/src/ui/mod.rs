@@ -214,6 +214,10 @@ pub struct FilePickerData {
 type FilePicker = Picker<PathBuf, FilePickerData>;
 
 pub fn file_picker(editor: &Editor, root: PathBuf) -> FilePicker {
+    file_picker_with_hidden(editor, root, editor.config().file_picker.hidden)
+}
+
+fn file_picker_with_hidden(editor: &Editor, root: PathBuf, hidden: bool) -> FilePicker {
     use ignore::WalkBuilder;
     use std::time::Instant;
 
@@ -231,7 +235,7 @@ pub fn file_picker(editor: &Editor, root: PathBuf) -> FilePicker {
     let mut walk_builder = WalkBuilder::new(&root);
 
     let mut files = walk_builder
-        .hidden(config.file_picker.hidden)
+        .hidden(hidden)
         .parents(config.file_picker.parents)
         .ignore(config.file_picker.ignore)
         .follow_links(config.file_picker.follow_symlinks)
@@ -292,7 +296,27 @@ pub fn file_picker(editor: &Editor, root: PathBuf) -> FilePicker {
         } else {
             prompt_root.join(path)
         }
-    }));
+    }))
+    .with_key_handler(crate::alt!('h'), {
+        let root = root.clone();
+        move || {
+            let root = root.clone();
+            let show_hidden = hidden;
+            Box::new(
+                move |compositor: &mut Compositor, cx: &mut crate::compositor::Context| {
+                    compositor.pop();
+                    let picker = file_picker_with_hidden(cx.editor, root, !show_hidden);
+                    compositor.push(Box::new(overlay::overlaid(picker)));
+                    let status = if show_hidden {
+                        "Showing hidden files"
+                    } else {
+                        "Hiding hidden files"
+                    };
+                    cx.editor.set_status(status);
+                },
+            )
+        }
+    });
     let injector = picker.injector();
     let timeout = std::time::Instant::now() + std::time::Duration::from_millis(30);
 

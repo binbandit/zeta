@@ -47,6 +47,7 @@ use helix_core::{
 use helix_view::{
     editor::Action,
     graphics::{CursorKind, Margin, Modifier, Rect},
+    input::KeyEvent,
     theme::Style,
     view::ViewPosition,
     Document, DocumentId, Editor,
@@ -259,6 +260,7 @@ pub struct Picker<T: 'static + Send + Sync, D: 'static> {
 
     callback_fn: PickerCallback<T>,
     option_from_prompt_fn: Option<PickerOptionFromPrompt<T>>,
+    key_handlers: HashMap<KeyEvent, PickerKeyHandler>,
     default_action: Action,
 
     pub truncate_start: bool,
@@ -388,6 +390,7 @@ impl<T: 'static + Send + Sync, D: 'static + Send + Sync> Picker<T, D> {
             show_preview: true,
             callback_fn: Box::new(callback_fn),
             option_from_prompt_fn: None,
+            key_handlers: HashMap::new(),
             default_action: Action::Replace,
             completion_height: 0,
             widths,
@@ -436,6 +439,15 @@ impl<T: 'static + Send + Sync, D: 'static + Send + Sync> Picker<T, D> {
         option_from_prompt_fn: PickerOptionFromPrompt<T>,
     ) -> Self {
         self.option_from_prompt_fn = Some(option_from_prompt_fn);
+        self
+    }
+
+    pub fn with_key_handler(
+        mut self,
+        key: KeyEvent,
+        handler: impl Fn() -> compositor::Callback + 'static,
+    ) -> Self {
+        self.key_handlers.insert(key, Box::new(handler));
         self
     }
 
@@ -1126,6 +1138,12 @@ impl<I: 'static + Send + Sync, D: 'static + Send + Sync> Component for Picker<I,
                     return close_fn(self);
                 }
             }
+            key_event if self.key_handlers.contains_key(&key_event) => {
+                let callback = self.key_handlers.get(&key_event).map(|handler| handler());
+                if let Some(callback) = callback {
+                    return EventResult::Consumed(Some(callback));
+                }
+            }
             key!(Enter) => {
                 // If the prompt has a history completion and is empty, use enter to accept
                 // that completion
@@ -1221,3 +1239,4 @@ impl<T: 'static + Send + Sync, D> Drop for Picker<T, D> {
 
 type PickerCallback<T> = Box<dyn Fn(&mut Context, &T, Action)>;
 type PickerOptionFromPrompt<T> = Box<dyn Fn(&Prompt) -> T>;
+type PickerKeyHandler = Box<dyn Fn() -> compositor::Callback>;
