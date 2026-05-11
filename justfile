@@ -11,7 +11,7 @@ install:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    cargo install --path helix-term --locked
+    HELIX_DISABLE_AUTO_GRAMMAR_BUILD=1 cargo install --path helix-term --locked
 
     config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
     helix_config_dir="$config_home/helix"
@@ -25,8 +25,24 @@ install:
     rm -f "$runtime_link"
     ln -s "$PWD/runtime" "$runtime_link"
 
-    hx --grammar fetch
-    hx --grammar build
+    fetch_and_build_grammars() {
+        if hx --grammar fetch && hx --grammar build; then
+            return 0
+        fi
+
+        printf 'Failed to fetch or build all grammars; retrying without GitLab-hosted grammars\n' >&2
+        gitlab_free_config_home="$(mktemp -d)"
+        trap 'rm -rf "$gitlab_free_config_home"' EXIT
+
+        mkdir -p "$gitlab_free_config_home/helix"
+        ln -s "$PWD/runtime" "$gitlab_free_config_home/helix/runtime"
+        printf '%s\n' 'use-grammars = { except = [ "blueprint", "debian", "lpf", "nginx", "rpmspec", "t32" ] }' > "$gitlab_free_config_home/helix/languages.toml"
+
+        XDG_CONFIG_HOME="$gitlab_free_config_home" hx --grammar fetch
+        XDG_CONFIG_HOME="$gitlab_free_config_home" hx --grammar build
+    }
+
+    fetch_and_build_grammars
 
     if command -v rustup >/dev/null 2>&1; then
         rustup component add rust-analyzer
